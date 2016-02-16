@@ -110,7 +110,7 @@
                     'max_client_cnxns': max_client_cnxns,
                     'myid_path': data_dir + '/myid',
                     'zookeeper_host' : zookeeper_hosts,
-                    'zookeepers_with_ids' : zookeepers_with_ids.values(),
+                    'zookeepers_with_ids' : zookeepers_with_ids,
                     'connection_string' : connection_string,
                     'initial_heap_size': initial_heap_size,
                     'max_heap_size': max_heap_size,
