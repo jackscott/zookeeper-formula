@@ -69,12 +69,12 @@
 {{ "%s:%d"|format(hostname, port) }}
 {%- endmacro %}
 # comma separated string of hostnames and ports
-{%- set connection_string = zookeeper_hosts|map('zk_server')|join(",") %}
+{%- set connection_string = zookeeper_hosts|map(zk_server)|join(",") %}
 
 # build up a map where {hostname => int}, used later on to create `myid`
 {%- set zookeepers_with_ids = {} %}
 {%- for i in range(node_count) %}
-{%- do zookeepers_with_ids.update({zookeeper_hosts[i] :  '{0:d}'.format(i)  %}
+{%- do zookeepers_with_ids.update({zookeeper_hosts[i] :  '{0:d}'.format(i)})  %}
 {%- endfor %}
 
 # return either the id of the host or an empty string
