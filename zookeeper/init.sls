@@ -4,26 +4,28 @@ zookeeper:
   group.present:
     - name: {{ zk.user }}
   user.present:
+    - order: 3
     - name: {{ zk.user }}
     - fullname: "Zookeeper Server"
     - gid_from_name: True
     - system: true
     - createhome: false
-    - password: true
     - groups:
         - {{ zk.user }}
         
 zk-directories:
   file.directory:
     - user: {{ zk.user }}
-    - group: { zk.user }
+    - group: {{ zk.user }}
     - mode: 755
     - makedirs: True
     - names:
       - /var/run/zookeeper
       - /var/lib/zookeeper
       - /var/log/zookeeper
-
+    - require:
+        - user: zookeeper
+          
 install-zookeeper-dist:
   cmd.run:
     - name: curl -L '{{ zk.source_url }}' | tar xz --no-same-owner
