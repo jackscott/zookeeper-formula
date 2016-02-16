@@ -87,7 +87,7 @@
 {%- set myid = zookeepers_with_ids.get(grains.id, '') %}
 
 {%- set zk = {} %}
-{%- do zk.update( { 'user': g.get('user', p.get('user')),
+{%- do zk.update( { 'user': g.get('user', p.get('user', 'zookeeper')),
                     'version' : version,
                     'version_name': version_name,
                     'source_url': source_url,
