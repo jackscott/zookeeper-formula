@@ -65,11 +65,17 @@
 {%- endif %}
 
 # given a hostname, return a host:port formatted string
-{%- macro zk_server(hostname) %}
+{%- macro zk_server(hostname) -%}
 {{ "%s:%d"|format(hostname, port) }}
 {%- endmacro %}
+
+{%- set tmp_conn = [] %}
+{%- for i in zookeeper_hosts %}
+{%- do tmp_conn.append(zk_server(i)) %}
+{% endfor %}
+
 # comma separated string of hostnames and ports
-{%- set connection_string = zookeeper_hosts|map(zk_server)|join(",") %}
+{%- set connection_string = tmp_conn|join(",") %}
 
 # build up a map where {hostname => int}, used later on to create `myid`
 {%- set zookeepers_with_ids = {} %}
@@ -103,8 +109,7 @@
                     'purge_interval': purge_interval,
                     'max_client_cnxns': max_client_cnxns,
                     'myid_path': data_dir + '/myid',
-                    'zookeeper_host' : zookeeper_host,
-                    'zookeepers' : zookeepers,
+                    'zookeeper_host' : zookeeper_hosts,
                     'zookeepers_with_ids' : zookeepers_with_ids.values(),
                     'connection_string' : connection_string,
                     'initial_heap_size': initial_heap_size,
