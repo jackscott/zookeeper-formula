@@ -48,11 +48,10 @@
 {%- set hosts_target = g.get('hosts_target', p.get('hosts_target', 'roles:zookeeper')) %}
 {%- set targeting_method = g.get('targeting_method', p.get('targeting_method', 'grain')) %}
 
-{%- set force_mine_update = salt['mine.send']('network.interface_ip', 'eth0') %}
-{%- set zookeepers_host_dict = salt['mine.get'](hosts_target, 'network.interface_ip', targeting_method) %}
-{%- set zookeepers_ids = zookeepers_host_dict.keys() %}
-{%- set zookeepers_hosts = zookeepers_host_dict.values() %}
-{%- set zookeeper_host_num = zookeepers_ids | length() %}
+# calling .keys() will throw an exception on an empty dict, not sure if this is too aggressive or not
+# also unsure if the `sort` is necessary, we do want the nodes id's to be uniform across all machines though
+{%- set zookeeper_hosts = salt['mine.get'](hosts_target, 'network.ip_addrs', targeting_method).keys()|sort %}
+{%- set zookeeper_host_num = zookeeper_hosts|length %}
 
 {%- if zookeeper_host_num == 0 %}
 # this will fail to even render but provide a hint as to what's wrong
@@ -65,25 +64,21 @@
 {%- set node_count = zookeeper_host_num - 1 %}
 {%- endif %}
 
-# yes, this is not pretty, but produces sth like:
-# {'node1': '0+node1', 'node2': '1+node2', 'node3': '2+node2'}
+# given a hostname, return a host:port formatted string
+{%- macro zk_server(hostname) %}
+{{ "%s:%d"|format(hostname, port) }}
+{%- endmacro %}
+# comma separated string of hostnames and ports
+{%- set connection_string = zookeeper_hosts|map('zk_server')|join(",") %}
+
+# build up a map where {hostname => int}, used later on to create `myid`
 {%- set zookeepers_with_ids = {} %}
 {%- for i in range(node_count) %}
-{%- do zookeepers_with_ids.update({zookeepers_ids[i] : '{0:d}'.format(i) + '+' + zookeepers_hosts[i] })  %}
+{%- do zookeepers_with_ids.update({zookeeper_hosts[i] :  '{0:d}'.format(i)  %}
 {%- endfor %}
 
-# a plain list of hostnames
-{%- set zookeepers = zookeepers_with_ids.values() | sort() %}
-# this is the 'safe bet' to use for just connection settings (backwards compatible)
-{%- set zookeeper_host = (zookeepers | first()).split('+') | last() %}
-# produce the connection string, sth. like: 'host1:2181,host2:2181,host3:2181'
-{%- set connection_string = [] %}
-{%- for n in zookeepers %}
-{%- do connection_string.append( n.split('+') | last() + ':' + port | string ) %}
-{% endfor %}
-
 # return either the id of the host or an empty string
-{%- set myid = zookeepers_with_ids.get(grains.id, '').split('+')|first() %}
+{%- set myid = zookeepers_with_ids.get(grains.id, '') %}
 
 {%- set zk = {} %}
 {%- do zk.update( { 'user': g.get('user', p.get('user')),
@@ -111,7 +106,7 @@
                     'zookeeper_host' : zookeeper_host,
                     'zookeepers' : zookeepers,
                     'zookeepers_with_ids' : zookeepers_with_ids.values(),
-                    'connection_string' : ','.join(connection_string),
+                    'connection_string' : connection_string,
                     'initial_heap_size': initial_heap_size,
                     'max_heap_size': max_heap_size,
                     'max_perm_size': max_perm_size,
@@ -119,3 +114,8 @@
                     'log_level': log_level,
                     'data_log_dir': data_log_dir
                  }) %}
+
+
+
+
+
