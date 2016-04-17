@@ -10,6 +10,8 @@ zookeeper:
     - gid_from_name: True
     - system: true
     - createhome: false
+    - require:
+        - group: zookeeper
     - groups:
         - {{ zk.user }}
         
