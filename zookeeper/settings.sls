@@ -52,10 +52,14 @@
 # also unsure if the `sort` is necessary, we do want the nodes id's to be uniform across all machines though
 {%- set zookeeper_hosts = salt['mine.get'](hosts_target, 'network.ip_addrs', targeting_method).keys()|sort %}
 {%- set zookeeper_host_num = zookeeper_hosts|length %}
+{%- set zookeepers_with_ids = {} %}
 
 {%- if zookeeper_host_num == 0 %}
 # this will fail to even render but provide a hint as to what's wrong
 {{ 'No zookeeper nodes are defined (you need to set roles:zookeeper at least for one node in your cluster' }}
+{% set node_count = 0 %}
+{% set zookeeper_hosts = ['127.0.0.1'] %}
+
 {%- elif zookeeper_host_num is odd %}
 # for 1, 3, 5 ... nodes just return the list
 {%- set node_count = zookeeper_host_num %}
@@ -66,7 +70,7 @@
 
 # given a hostname, return a host:port formatted string
 {%- macro zk_server(hostname) -%}
-{{ "%s:%d"|format(hostname, port) }}
+{{ "%s:%d"|format(hostname, port|int) }}
 {%- endmacro %}
 
 {%- set tmp_conn = [] %}
@@ -78,7 +82,7 @@
 {%- set connection_string = tmp_conn|join(",") %}
 
 # build up a map where {hostname => int}, used later on to create `myid`
-{%- set zookeepers_with_ids = {} %}
+
 {%- for i in range(node_count) %}
 {%- do zookeepers_with_ids.update({zookeeper_hosts[i] :  '{0:d}'.format(i)})  %}
 {%- endfor %}
